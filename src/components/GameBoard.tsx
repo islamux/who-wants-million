@@ -82,7 +82,7 @@ export function GameBoard({
       soundPlay(correct ? 'correct' : 'incorrect')
     }, 1500)
     return () => clearTimeout(timer)
-  }, [state.revealAnswers])
+  }, [state.revealAnswers, state.answerSelected, currentQuestion, soundPlay])
 
   useEffect(() => {
     if (!state.revealAnswers) return
@@ -92,7 +92,7 @@ export function GameBoard({
       const timer = setTimeout(onNext, 2500)
       return () => clearTimeout(timer)
     }
-  }, [state.revealAnswers])
+  }, [state.revealAnswers, state.answerSelected, state.currentQuestionIndex, state.activeQuestions.length, currentQuestion, onNext])
 
   const handleConfirm = () => {
     soundPlay('finalAnswer')
