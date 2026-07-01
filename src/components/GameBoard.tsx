@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
 import { CheckCircle } from 'lucide-react'
-import { questions } from '../data/questions'
 import type { GameState, Question } from '../types/game'
 import type { SoundName } from '../hooks/useSound'
 import { QuestionCard } from './QuestionCard'
@@ -89,7 +88,7 @@ export function GameBoard({
     if (!state.revealAnswers) return
 
     const correct = currentQuestion?.options[state.answerSelected ?? -1]?.correct ?? false
-    if (correct && state.currentQuestionIndex < questions.length - 1) {
+    if (correct && state.currentQuestionIndex < state.activeQuestions.length - 1) {
       const timer = setTimeout(onNext, 2500)
       return () => clearTimeout(timer)
     }

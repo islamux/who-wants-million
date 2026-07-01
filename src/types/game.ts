@@ -28,6 +28,7 @@ export type GamePhase = 'idle' | 'playing' | 'gameover'
 
 export interface GameState {
   phase: GamePhase
+  activeQuestions: Question[]
   gameWon: boolean
   walkedAway: boolean
   currentQuestionIndex: number
@@ -45,7 +46,7 @@ export type GameAction =
   | { type: 'SELECT_ANSWER'; index: number }
   | { type: 'CONFIRM_ANSWER' }
   | { type: 'NEXT_QUESTION' }
-  | { type: 'USE_5050'; correctIndex: number; keepIndices: number[] }
+  | { type: 'USE_5050'; keepIndices: number[] }
   | { type: 'USE_AUDIENCE'; poll: number[] }
   | { type: 'WALK_AWAY'; prize: string }
   | { type: 'TIMEOUT'; correctAnswer: string }

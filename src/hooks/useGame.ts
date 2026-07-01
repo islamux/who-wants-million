@@ -1,9 +1,13 @@
 import { useReducer, useCallback } from 'react'
-import type { GameState, GameAction } from '../types/game'
+import type { GameState, GameAction, Question } from '../types/game'
 import { questions, moneyLevels } from '../data/questions'
 import { shuffleArray } from '../utils/helpers'
 
 const TIMER_DURATION = 30
+
+function cloneQuestions(): Question[] {
+  return questions.map(q => ({ ...q, options: q.options.map(o => ({ ...o })) }))
+}
 
 function getSafeHavenPrize(index: number): string {
   for (let i = index - 1; i >= 0; i--) {
@@ -36,6 +40,7 @@ function generateAudiencePoll(questionIndex: number): number[] {
 export function createInitialState(): GameState {
   return {
     phase: 'idle',
+    activeQuestions: [],
     gameWon: false,
     walkedAway: false,
     currentQuestionIndex: -1,
@@ -54,6 +59,7 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'START_GAME':
       return {
         ...createInitialState(),
+        activeQuestions: cloneQuestions(),
         phase: 'playing',
         currentQuestionIndex: 0,
         timerValue: TIMER_DURATION,
@@ -70,13 +76,13 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'CONFIRM_ANSWER': {
       if (state.answerSelected === null || state.revealAnswers) return state
-      const q = questions[state.currentQuestionIndex]
+      const q = state.activeQuestions[state.currentQuestionIndex]
       const selected = q.options[state.answerSelected]
       const correctAnswer = q.options.find(o => o.correct)!.text
       const prize = moneyLevels[state.currentQuestionIndex].amount
 
       if (selected.correct) {
-        if (state.currentQuestionIndex === questions.length - 1) {
+        if (state.currentQuestionIndex === state.activeQuestions.length - 1) {
           return {
             ...state,
             revealAnswers: true,
@@ -113,14 +119,17 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
     case 'USE_5050': {
-      const q = questions[state.currentQuestionIndex]
-      const opts = q.options.map((o, i) => ({
-        ...o,
-        disabled: o.correct ? false : !action.keepIndices.includes(i),
-      }))
-      questions[state.currentQuestionIndex] = { ...q, options: opts }
+      const activeQuestions = state.activeQuestions.map((q, qi) => {
+        if (qi !== state.currentQuestionIndex) return q
+        const options = q.options.map((o, i) => ({
+          ...o,
+          disabled: o.correct ? false : !action.keepIndices.includes(i),
+        }))
+        return { ...q, options }
+      })
       return {
         ...state,
+        activeQuestions,
         lifelines: { ...state.lifelines, fiftyFiftyUsed: true },
       }
     }
@@ -180,8 +189,7 @@ export function useGame() {
       .filter(x => !x.correct)
       .map(x => x.i)
     const kept = shuffleArray(incorrectIndices).slice(0, 1)
-    const keepAll = [correctIndex, ...kept]
-    dispatch({ type: 'USE_5050', correctIndex, keepIndices: keepAll })
+    dispatch({ type: 'USE_5050', keepIndices: [correctIndex, ...kept] })
   }, [state.currentQuestionIndex])
 
   const useAudience = useCallback(() => {
@@ -203,7 +211,7 @@ export function useGame() {
   const restart = useCallback(() => dispatch({ type: 'RESTART' }), [])
 
   const currentQuestion = state.currentQuestionIndex >= 0
-    ? questions[state.currentQuestionIndex]
+    ? state.activeQuestions[state.currentQuestionIndex]
     : null
 
   const safeHavenPrize = state.currentQuestionIndex >= 0
