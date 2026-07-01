@@ -13,8 +13,8 @@
 ## البدء
 
 ```bash
-git clone https://github.com/islamux/who-wants-million-vue2.git
-cd who-wants-million-vue2
+git clone https://github.com/islamux/who-wants-million.git
+cd who-wants-million
 pnpm install
 pnpm dev
 ```
