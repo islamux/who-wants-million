@@ -46,7 +46,6 @@ export function createInitialState(): GameState {
     lifelines: { fiftyFiftyUsed: false, audienceUsed: false },
     audiencePoll: null,
     timerValue: TIMER_DURATION,
-    timerActive: true,
   }
 }
 
@@ -159,9 +158,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case 'RESTART':
       return createInitialState()
 
-    case 'CLEAR_MESSAGE':
-      return { ...state, gameMessage: null }
-
     default:
       return state
   }
@@ -180,8 +176,8 @@ export function useGame() {
     const q = questions[state.currentQuestionIndex]
     const correctIndex = q.options.findIndex(o => o.correct)
     const incorrectIndices = q.options
-      .map((o, i) => ({ i, c: o.correct }))
-      .filter(x => !x.c)
+      .map((o, i) => ({ i, correct: o.correct }))
+      .filter(x => !x.correct)
       .map(x => x.i)
     const kept = shuffleArray(incorrectIndices).slice(0, 1)
     const keepAll = [correctIndex, ...kept]

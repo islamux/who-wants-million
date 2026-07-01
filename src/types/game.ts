@@ -7,8 +7,6 @@ export interface Option {
 export interface Question {
   text: string
   options: Option[]
-  level: number
-  isSafeHaven?: boolean
 }
 
 export interface MoneyLevel {
@@ -40,7 +38,6 @@ export interface GameState {
   lifelines: Lifelines
   audiencePoll: number[] | null
   timerValue: number
-  timerActive: boolean
 }
 
 export type GameAction =
@@ -54,4 +51,3 @@ export type GameAction =
   | { type: 'TIMEOUT'; correctAnswer: string }
   | { type: 'TICK' }
   | { type: 'RESTART' }
-  | { type: 'CLEAR_MESSAGE' }

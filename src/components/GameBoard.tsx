@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { CheckCircle } from 'lucide-react'
 import { questions } from '../data/questions'
 import type { GameState, Question } from '../types/game'
+import type { SoundName } from '../hooks/useSound'
 import { QuestionCard } from './QuestionCard'
 import { Timer } from './Timer'
 import { Lifelines } from './Lifelines'
@@ -10,7 +11,7 @@ import { AudiencePoll } from './AudiencePoll'
 interface Props {
   state: GameState
   currentQuestion: Question | null
-  soundPlay: (name: string) => void
+  soundPlay: (name: SoundName) => void
   soundInit: () => Promise<void>
   onSelect: (index: number) => void
   onConfirm: () => void
@@ -52,11 +53,11 @@ export function GameBoard({
 
   useEffect(() => {
     if (state.phase === 'gameover') return
-    if (!state.timerActive || state.revealAnswers) return
+    if (state.revealAnswers) return
 
     const id = setInterval(onTick, 1000)
     return () => clearInterval(id)
-  }, [state.currentQuestionIndex, state.phase, state.timerActive, state.revealAnswers, onTick])
+  }, [state.currentQuestionIndex, state.phase, state.revealAnswers, onTick])
 
   useEffect(() => {
     if (state.phase !== 'playing') return
@@ -110,7 +111,7 @@ export function GameBoard({
         onSelect={onSelect}
       />
 
-      <Timer value={state.timerValue} active={state.timerActive && !state.revealAnswers} />
+      <Timer value={state.timerValue} active={!state.revealAnswers} />
 
       <div className="text-center mt-5">
         <button
