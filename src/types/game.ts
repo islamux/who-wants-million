@@ -29,6 +29,7 @@ export type GamePhase = 'idle' | 'playing' | 'gameover'
 export interface GameState {
   phase: GamePhase
   activeQuestions: Question[]
+  chapterId: number | null
   gameWon: boolean
   walkedAway: boolean
   currentQuestionIndex: number
@@ -42,7 +43,7 @@ export interface GameState {
 }
 
 export type GameAction =
-  | { type: 'START_GAME' }
+  | { type: 'START_GAME'; chapterId: number }
   | { type: 'SELECT_ANSWER'; index: number }
   | { type: 'CONFIRM_ANSWER' }
   | { type: 'NEXT_QUESTION' }

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { gameReducer, createInitialState, generateAudiencePoll } from './useGame'
-import { questions, moneyLevels } from '../data/questions'
+import { chapterQuestions, moneyLevels } from '../data/questions'
+
+const TEST_CHAPTER = 5
+const testQuestions = chapterQuestions[TEST_CHAPTER]
 
 describe('createInitialState', () => {
   it('returns a state with phase "idle"', () => {
@@ -23,24 +26,24 @@ describe('createInitialState', () => {
 
 describe('gameReducer', () => {
   it('START_GAME sets phase to "playing" and clones questions', () => {
-    const state = gameReducer(createInitialState(), { type: 'START_GAME' })
+    const state = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
     expect(state.phase).toBe('playing')
     expect(state.currentQuestionIndex).toBe(0)
     expect(state.timerValue).toBe(30)
-    expect(state.activeQuestions.length).toBe(questions.length)
-    expect(state.activeQuestions[0].text).toBe(questions[0].text)
-    expect(state.activeQuestions[0].options[0].correct).toBe(questions[0].options[0].correct)
+    expect(state.activeQuestions.length).toBe(testQuestions.length)
+    expect(state.activeQuestions[0].text).toBe(testQuestions[0].text)
+    expect(state.activeQuestions[0].options[0].correct).toBe(testQuestions[0].options[0].correct)
   })
 
   describe('SELECT_ANSWER', () => {
     it('sets answerSelected to the given index', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const state = gameReducer(playing, { type: 'SELECT_ANSWER', index: 2 })
       expect(state.answerSelected).toBe(2)
     })
 
     it('does nothing when answers are already revealed', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const correctIndex = playing.activeQuestions[0].options.findIndex(o => o.correct)
       const selected = gameReducer(playing, { type: 'SELECT_ANSWER', index: correctIndex })
       const revealed = gameReducer(selected, { type: 'CONFIRM_ANSWER' })
@@ -52,13 +55,13 @@ describe('gameReducer', () => {
 
   describe('CONFIRM_ANSWER', () => {
     it('does nothing when no answer is selected', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const state = gameReducer(playing, { type: 'CONFIRM_ANSWER' })
       expect(state).toEqual(playing)
     })
 
     it('returns gameover for a wrong answer', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const wrongIndex = playing.activeQuestions[0].options.findIndex(o => !o.correct)
       const selected = gameReducer(playing, { type: 'SELECT_ANSWER', index: wrongIndex })
       const state = gameReducer(selected, { type: 'CONFIRM_ANSWER' })
@@ -68,7 +71,7 @@ describe('gameReducer', () => {
     })
 
     it('reveals correct answer without ending game (not last question)', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const correctIndex = playing.activeQuestions[0].options.findIndex(o => o.correct)
       const selected = gameReducer(playing, { type: 'SELECT_ANSWER', index: correctIndex })
       const state = gameReducer(selected, { type: 'CONFIRM_ANSWER' })
@@ -82,10 +85,10 @@ describe('gameReducer', () => {
       const almostDone = {
         ...createInitialState(),
         phase: 'playing' as const,
-        activeQuestions: [...questions],
-        currentQuestionIndex: questions.length - 1,
+        activeQuestions: [...testQuestions],
+        currentQuestionIndex: testQuestions.length - 1,
       }
-      const correctIndex = almostDone.activeQuestions[questions.length - 1].options.findIndex(o => o.correct)
+      const correctIndex = almostDone.activeQuestions[testQuestions.length - 1].options.findIndex(o => o.correct)
       const selected = gameReducer(almostDone, { type: 'SELECT_ANSWER', index: correctIndex })
       const state = gameReducer(selected, { type: 'CONFIRM_ANSWER' })
       expect(state.phase).toBe('gameover')
@@ -94,7 +97,7 @@ describe('gameReducer', () => {
     })
 
     it('ignores CONFIRM_ANSWER after answers are already revealed', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const correctIndex = playing.activeQuestions[0].options.findIndex(o => o.correct)
       const selected = gameReducer(playing, { type: 'SELECT_ANSWER', index: correctIndex })
       const revealed = gameReducer(selected, { type: 'CONFIRM_ANSWER' })
@@ -105,7 +108,7 @@ describe('gameReducer', () => {
 
   describe('NEXT_QUESTION', () => {
     it('increments index and resets answer state', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const correctIndex = playing.activeQuestions[0].options.findIndex(o => o.correct)
       const selected = gameReducer(playing, { type: 'SELECT_ANSWER', index: correctIndex })
       const confirmed = gameReducer(selected, { type: 'CONFIRM_ANSWER' })
@@ -119,14 +122,14 @@ describe('gameReducer', () => {
   })
 
   it('TICK decrements the timer', () => {
-    const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+    const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
     const state = gameReducer(playing, { type: 'TICK' })
     expect(state.timerValue).toBe(29)
   })
 
   describe('TIMEOUT', () => {
     it('ends the game with a timeout message', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const state = gameReducer(playing, { type: 'TIMEOUT', correctAnswer: 'test answer' })
       expect(state.phase).toBe('gameover')
       expect(state.revealAnswers).toBe(true)
@@ -136,7 +139,7 @@ describe('gameReducer', () => {
 
   describe('WALK_AWAY', () => {
     it('ends the game with walkedAway set to true', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const state = gameReducer(playing, { type: 'WALK_AWAY', prize: '100 ريال' })
       expect(state.phase).toBe('gameover')
       expect(state.walkedAway).toBe(true)
@@ -145,7 +148,7 @@ describe('gameReducer', () => {
 
   describe('USE_5050', () => {
     it('disables exactly 2 wrong options on the current question', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const q = playing.activeQuestions[0]
       const correctIndex = q.options.findIndex(o => o.correct)
       const incorrectIndices = q.options.map((_, i) => i).filter(i => i !== correctIndex)
@@ -160,7 +163,7 @@ describe('gameReducer', () => {
 
   describe('USE_5050 then RESTART (bugfix regression)', () => {
     it('resets active questions so 50/50 does not persist', () => {
-      const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+      const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
       const q = playing.activeQuestions[0]
       const correctIndex = q.options.findIndex(o => o.correct)
       const incorrectIndices = q.options.map((_, i) => i).filter(i => i !== correctIndex).slice(0, 1)
@@ -172,7 +175,7 @@ describe('gameReducer', () => {
   })
 
   it('RESTART returns to the initial state', () => {
-    const playing = gameReducer(createInitialState(), { type: 'START_GAME' })
+    const playing = gameReducer(createInitialState(), { type: 'START_GAME', chapterId: TEST_CHAPTER })
     const dead = gameReducer(playing, { type: 'TIMEOUT', correctAnswer: 'anything' })
     const state = gameReducer(dead, { type: 'RESTART' })
     expect(state).toEqual(createInitialState())
@@ -187,24 +190,24 @@ describe('gameReducer', () => {
 
 describe('generateAudiencePoll', () => {
   it('returns an array with the same length as the question options', () => {
-    for (let i = 0; i < questions.length; i++) {
-      const poll = generateAudiencePoll(i)
-      expect(poll).toHaveLength(questions[i].options.length)
+    for (let i = 0; i < testQuestions.length; i++) {
+      const poll = generateAudiencePoll(testQuestions, i)
+      expect(poll).toHaveLength(testQuestions[i].options.length)
     }
   })
 
   it('returns percentages that sum to 100', () => {
-    for (let i = 0; i < questions.length; i++) {
-      const poll = generateAudiencePoll(i)
+    for (let i = 0; i < testQuestions.length; i++) {
+      const poll = generateAudiencePoll(testQuestions, i)
       const sum = poll.reduce((a, b) => a + b, 0)
       expect(sum).toBe(100)
     }
   })
 
   it('gives the correct answer the highest percentage', () => {
-    for (let i = 0; i < questions.length; i++) {
-      const poll = generateAudiencePoll(i)
-      const correctIndex = questions[i].options.findIndex(o => o.correct)
+    for (let i = 0; i < testQuestions.length; i++) {
+      const poll = generateAudiencePoll(testQuestions, i)
+      const correctIndex = testQuestions[i].options.findIndex(o => o.correct)
       const correctPercentage = poll[correctIndex]
       for (let j = 0; j < poll.length; j++) {
         if (j !== correctIndex) {
@@ -215,8 +218,8 @@ describe('generateAudiencePoll', () => {
   })
 
   it('all percentages are between 0 and 100', () => {
-    for (let i = 0; i < questions.length; i++) {
-      const poll = generateAudiencePoll(i)
+    for (let i = 0; i < testQuestions.length; i++) {
+      const poll = generateAudiencePoll(testQuestions, i)
       for (const pct of poll) {
         expect(pct).toBeGreaterThanOrEqual(0)
         expect(pct).toBeLessThanOrEqual(100)

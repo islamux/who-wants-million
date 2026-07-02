@@ -1,12 +1,12 @@
 import { useReducer, useCallback } from 'react'
 import type { GameState, GameAction, Question } from '../types/game'
-import { questions, moneyLevels } from '../data/questions'
+import { chapterQuestions, moneyLevels } from '../data/questions'
 import { shuffleArray } from '../utils/helpers'
 
 const TIMER_DURATION = 30
 
-function cloneQuestions(): Question[] {
-  return questions.map(q => ({ ...q, options: q.options.map(o => ({ ...o })) }))
+function cloneQuestions(chapterId: number): Question[] {
+  return chapterQuestions[chapterId].map(q => ({ ...q, options: q.options.map(o => ({ ...o })) }))
 }
 
 function getSafeHavenPrize(index: number): string {
@@ -16,8 +16,8 @@ function getSafeHavenPrize(index: number): string {
   return '0 ريال'
 }
 
-export function generateAudiencePoll(questionIndex: number): number[] {
-  const opts = questions[questionIndex].options
+export function generateAudiencePoll(activeQuestions: Question[], questionIndex: number): number[] {
+  const opts = activeQuestions[questionIndex].options
   const correctIndex = opts.findIndex(o => o.correct)
   const percentages = new Array(opts.length).fill(0)
   const correctPercentage = Math.floor(Math.random() * 40) + 40
@@ -38,6 +38,7 @@ export function createInitialState(): GameState {
   return {
     phase: 'idle',
     activeQuestions: [],
+    chapterId: null,
     gameWon: false,
     walkedAway: false,
     currentQuestionIndex: -1,
@@ -56,7 +57,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'START_GAME':
       return {
         ...createInitialState(),
-        activeQuestions: cloneQuestions(),
+        activeQuestions: cloneQuestions(action.chapterId),
+        chapterId: action.chapterId,
         phase: 'playing',
         currentQuestionIndex: 0,
         timerValue: TIMER_DURATION,
@@ -172,14 +174,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 export function useGame() {
   const [state, dispatch] = useReducer(gameReducer, undefined, createInitialState)
 
-  const startGame = useCallback(() => dispatch({ type: 'START_GAME' }), [])
+  const startGame = useCallback((chapterId: number) => dispatch({ type: 'START_GAME', chapterId }), [])
   const selectAnswer = useCallback((index: number) => dispatch({ type: 'SELECT_ANSWER', index }), [])
   const confirmAnswer = useCallback(() => dispatch({ type: 'CONFIRM_ANSWER' }), [])
 
   const nextQuestion = useCallback(() => dispatch({ type: 'NEXT_QUESTION' }), [])
 
   const useFiftyFifty = useCallback(() => {
-    const q = questions[state.currentQuestionIndex]
+    const q = state.activeQuestions[state.currentQuestionIndex]
     const correctIndex = q.options.findIndex(o => o.correct)
     const incorrectIndices = q.options
       .map((o, i) => ({ i, correct: o.correct }))
@@ -190,9 +192,9 @@ export function useGame() {
   }, [state.currentQuestionIndex])
 
   const useAudience = useCallback(() => {
-    const poll = generateAudiencePoll(state.currentQuestionIndex)
+    const poll = generateAudiencePoll(state.activeQuestions, state.currentQuestionIndex)
     dispatch({ type: 'USE_AUDIENCE', poll })
-  }, [state.currentQuestionIndex])
+  }, [state.activeQuestions, state.currentQuestionIndex])
 
   const walkAway = useCallback(() => {
     const prize = moneyLevels[state.currentQuestionIndex].amount
@@ -200,9 +202,9 @@ export function useGame() {
   }, [state.currentQuestionIndex])
 
   const handleTimeout = useCallback(() => {
-    const correctAnswer = questions[state.currentQuestionIndex].options.find(o => o.correct)!.text
+    const correctAnswer = state.activeQuestions[state.currentQuestionIndex].options.find(o => o.correct)!.text
     dispatch({ type: 'TIMEOUT', correctAnswer })
-  }, [state.currentQuestionIndex])
+  }, [state.activeQuestions, state.currentQuestionIndex])
 
   const tick = useCallback(() => dispatch({ type: 'TICK' }), [])
   const restart = useCallback(() => dispatch({ type: 'RESTART' }), [])
