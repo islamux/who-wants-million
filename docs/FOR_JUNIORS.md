@@ -19,7 +19,7 @@
    - [3f. useRef](#3f-useref)
     - [3g. Conditional Rendering](#3g-conditional-rendering)
     - [3h. TypeScript Basics](#3h-typescript-basics)
-    - [3i. Props vs Hooks — The Big Picture](#3i-props-vs-hooks--the-big-picture)
+    - [3i. Props vs Hooks — The Big Picture](#3i-props-vs-hooks-the-big-picture)
 4. [Game Flow Walkthrough](#4-game-flow-walkthrough)
 5. [File-by-File Breakdown](#5-file-by-file-breakdown)
 6. [Audio System (Tone.js)](#6-audio-system-tonejs)
@@ -186,7 +186,12 @@ state transitions. `useReducer` works like a **bank teller**:
 function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'START_GAME':
-      return { ...state, phase: 'playing', currentQuestionIndex: 0 }
+      return {
+        ...createInitialState(),     // reset everything
+        activeQuestions: cloneQuestions(),  // fresh copy of questions
+        phase: 'playing',
+        currentQuestionIndex: 0,
+      }
     case 'SELECT_ANSWER':
       return { ...state, answerSelected: action.index }
     // ... more cases
@@ -234,6 +239,7 @@ In this project, `useEffect` is used for:
 // 1. Timer countdown — sets up an interval, cleans it up
 useEffect(() => {
   if (state.phase === 'gameover') return
+  if (state.revealAnswers) return  // don't tick while answers are revealed
   const id = setInterval(onTick, 1000)  // call onTick every second
   return () => clearInterval(id)         // stop the interval when question changes
 }, [state.currentQuestionIndex, state.phase, state.revealAnswers, onTick])
@@ -720,8 +726,8 @@ state hooks and the UI components.
 
 All TypeScript types in one file:
 - `Option`, `Question`, `MoneyLevel` — data shapes.
-- `GameState` — the full state object with 13 fields.
-- `GameAction` — discriminated union of 9 possible actions.
+- `GameState` — the full state object with 12 fields.
+- `GameAction` — discriminated union of 10 possible actions.
 - `Lifelines` — tracks which lifelines are used.
 - `GameMessage` — text + type (success/error/info).
 - `GamePhase` — `'idle' | 'playing' | 'gameover'`.
@@ -872,15 +878,22 @@ const handleClick = useCallback(() => dispatch({ type: 'TICK' }), [])
 ### 8.4 Using the wrong key prop in lists
 
 ❌ **Wrong:**
-```ts
-{items.map((item, index) => <Item key={index} ... />)}
-// Using array index as key can cause issues when items reorder.
+```tsx
+{questions.map((q, index) => <QuestionCard key={index} ... />)}
+// Reordering or inserting items causes rendering bugs
+// because React matches components by key, not position.
 ```
 
 ✅ **Right:**
-```ts
-{items.map((item, index) => <Item key={index} ... />)}
-// In this project, items never reorder (options loop), so index is fine here.
+```tsx
+{questions.map(q => <QuestionCard key={q.text} ... />)}
+// A stable identifier (like unique text) tells React which
+// item is which, even when the list changes.
+```
+
+In lists that never reorder (like the 4 options in a multiple-choice
+question), index-based keys are acceptable — but a stable key is
+always safer.
 ```
 
 ### 8.5 Mutating arrays that should be immutable
@@ -932,4 +945,4 @@ inside it.
 
 ---
 
-*Last updated: July 2026 (updated with Props vs Hooks comparison)*
+*Last updated: July 2026 — verified against actual source (docs-guard pass)*
