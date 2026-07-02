@@ -17,8 +17,9 @@
    - [3d. useEffect](#3d-useeffect)
    - [3e. useCallback](#3e-usecallback)
    - [3f. useRef](#3f-useref)
-   - [3g. Conditional Rendering](#3g-conditional-rendering)
-   - [3h. TypeScript Basics](#3h-typescript-basics)
+    - [3g. Conditional Rendering](#3g-conditional-rendering)
+    - [3h. TypeScript Basics](#3h-typescript-basics)
+    - [3i. Props vs Hooks — The Big Picture](#3i-props-vs-hooks--the-big-picture)
 4. [Game Flow Walkthrough](#4-game-flow-walkthrough)
 5. [File-by-File Breakdown](#5-file-by-file-breakdown)
 6. [Audio System (Tone.js)](#6-audio-system-tonejs)
@@ -366,6 +367,82 @@ case 'SELECT_ANSWER':
   // TypeScript knows action.index exists (TypeScript autocomplete helps!)
   return { ...state, answerSelected: action.index }
 ```
+
+### 3i. Props vs Hooks — The Big Picture
+
+Both props and hooks are ways to get data into your component. But they serve
+completely different purposes.
+
+| | Props | Hooks |
+|---|---|---|
+| **Who owns the data?** | The **parent** component | The **current** component |
+| **Can you change it?** | No — read-only | Yes — via dispatch / setState |
+| **Direction** | Flows **down** (parent → child) | Stays **local** (inside the component) |
+| **Purpose** | Configuration / "settings" from outside | Internal memory & side effects |
+| **Example** | `<Timer value={30} active={true} />` | `const [state, dispatch] = useReducer(...)` |
+
+#### The data-flow rule
+
+In this app, data flows in one direction:
+
+```
+useGame() hook (owns all state)
+    │
+    │  props flow DOWN
+    ▼
+App.tsx (passes state as props)
+    │
+    ▼
+GameBoard, MoneyTree, etc. (receive props, render UI)
+    │
+    │  actions flow UP via callback props
+    ▼
+dispatch → reducer → new state → re-render
+```
+
+**Props go down. Actions go up.** A child component never changes its props
+directly — it calls a function prop (like `onSelect`) that the parent wired
+to `dispatch`.
+
+#### When to use each
+
+**Use props when:**
+- The parent knows something the child needs to display.
+- The child needs a way to notify the parent (`onSelect`, `onConfirm`, etc.).
+- You're building a reusable UI piece (like `OptionButton`).
+
+**Use hooks when:**
+- The data belongs to this component and its children.
+- You need to remember something across renders (state).
+- You need side effects like timers, audio, or API calls.
+
+#### Real example from this project
+
+```tsx
+// App.tsx — owns the state via useGame() hook
+const { state, startGame, selectAnswer } = useGame()
+
+// App passes state DOWN as props
+return (
+  <GameBoard
+    state={state}         // ← prop: current game data
+    onSelect={selectAnswer}  // ← prop: a callback function
+  />
+)
+
+// GameBoard.tsx — receives props, uses them
+function GameBoard({ state, onSelect }: Props) {
+  // state and onSelect come from parent — cannot change them
+  // But it can read state and call onSelect to trigger changes
+  return (
+    <OptionButton onSelect={onSelect} />  // passes the callback down
+  )
+}
+```
+
+The `useGame()` hook at the top is the single source of truth. Everything
+else receives slices of that state as props. This makes the app predictable:
+to understand where data comes from, look at the parent.
 
 ---
 
@@ -855,4 +932,4 @@ inside it.
 
 ---
 
-*Last updated: July 2026*
+*Last updated: July 2026 (updated with Props vs Hooks comparison)*
