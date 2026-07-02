@@ -16,7 +16,7 @@ function getSafeHavenPrize(index: number): string {
   return '0 ريال'
 }
 
-function generateAudiencePoll(questionIndex: number): number[] {
+export function generateAudiencePoll(questionIndex: number): number[] {
   const opts = questions[questionIndex].options
   const correctIndex = opts.findIndex(o => o.correct)
   const percentages = new Array(opts.length).fill(0)
@@ -26,14 +26,11 @@ function generateAudiencePoll(questionIndex: number): number[] {
 
   for (let i = 0; i < opts.length; i++) {
     if (i === correctIndex) continue
-    if (i === opts.length - 1) {
-      percentages[i] = remaining
-    } else {
-      const part = Math.floor(Math.random() * remaining * 0.8)
-      percentages[i] = part
-      remaining -= part
-    }
+    const part = Math.floor(Math.random() * remaining * 0.8)
+    percentages[i] = part
+    remaining -= part
   }
+  percentages[correctIndex] += remaining
   return percentages
 }
 
@@ -54,7 +51,7 @@ export function createInitialState(): GameState {
   }
 }
 
-function gameReducer(state: GameState, action: GameAction): GameState {
+export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'START_GAME':
       return {
