@@ -6,7 +6,9 @@ import { shuffleArray } from '../utils/helpers'
 const TIMER_DURATION = 30
 
 function cloneQuestions(chapterId: number): Question[] {
-  return chapterQuestions[chapterId].map(q => ({ ...q, options: q.options.map(o => ({ ...o })) }))
+  const questions = chapterQuestions[chapterId]
+  if (!questions) return []
+  return questions.map(q => ({ ...q, options: q.options.map(o => ({ ...o })) }))
 }
 
 function getSafeHavenPrize(index: number): string {

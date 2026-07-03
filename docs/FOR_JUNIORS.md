@@ -100,14 +100,14 @@ who-wants-million/
     ├── types/
     │   └── game.ts         # All TypeScript types (GameState, GameAction, etc.)
     ├── data/
-    │   └── questions.ts    # 15 questions + money levels hardcoded
+    │   └── questions.ts    # 12 chapters × 15 questions + money levels hardcoded
     ├── utils/
     │   └── helpers.ts      # shuffleArray, optionLabel
     ├── hooks/
     │   ├── useGame.ts      # ALL game logic in a reducer (central brain)
     │   └── useSound.ts     # Audio setup with Tone.js
     └── components/
-        ├── StartScreen.tsx   # "Welcome — click to play"
+        ├── StartScreen.tsx   # Chapter selection grid with logo
         ├── GameBoard.tsx     # Main playing screen (timer, lifelines, confirm)
         ├── QuestionCard.tsx  # Shows question text + 4 option buttons
         ├── OptionButton.tsx  # Single answer button (A, B, C, D)
@@ -469,10 +469,10 @@ Let's trace through one complete game, step by step. Watch how data flows.
    }
    ```
 
-2. User clicks "ابدأ اللعبة" (Start).
-3. `StartScreen` calls `onStart` → which calls `startGame` → which dispatches:
+2. User clicks a chapter button (e.g., "الباب الأول — في الكون والحياة").
+3. `StartScreen` calls `onStart(ch.id)` → which calls `startGame(chapterId)` → which dispatches:
    ```ts
-   dispatch({ type: 'START_GAME' })
+   dispatch({ type: 'START_GAME', chapterId: 1 })
    ```
 
 4. The reducer handles it:
@@ -480,7 +480,7 @@ Let's trace through one complete game, step by step. Watch how data flows.
    case 'START_GAME':
      return {
        ...createInitialState(),  // reset everything
-       activeQuestions: cloneQuestions(),  // deep-copy the pristine questions
+       activeQuestions: cloneQuestions(action.chapterId),  // deep-copy the 15 questions for this chapter
        phase: 'playing',         // now shows GameBoard
        currentQuestionIndex: 0,  // first question
        timerValue: 30,           // start timer at 30
@@ -713,7 +713,9 @@ state hooks and the UI components.
 
 ### src/components/StartScreen.tsx
 
-- Logo image + "Ready?" text + start button.
+- Logo image + "Ready?" text + 12 chapter buttons in a grid.
+- Each button shows the chapter title (e.g., "في الكون والحياة") and number (e.g., "الباب الأول").
+- Clicking a chapter dispatches `START_GAME` with the chosen `chapterId`.
 - Simple CSS animations (float, fade-in, pulse-glow).
 
 ### src/components/GameOver.tsx
@@ -734,9 +736,11 @@ All TypeScript types in one file:
 
 ### src/data/questions.ts
 
-- 15 hardcoded Arabic questions about geography, science, history, etc.
+- 12 chapters, each with 15 hardcoded Arabic questions about Islamic culture, science, history, faith, and refutations.
+- `chapterQuestions: Record<number, Question[]>` maps chapter ID → its 15 questions.
+- `chapterList` — array of `{ id, title }` objects with descriptive titles (e.g., "في الكون والحياة").
 - 15 money levels (100 to 1,000,000 ريال) with safe havens at levels 5, 10, 15.
-- Questions are `Question[]`, money levels are `MoneyLevel[]`.
+- Questions and money levels are exported as typed constants.
 
 ### src/utils/helpers.ts
 
@@ -785,7 +789,7 @@ synth.triggerAttackRelease('G5', '8n', Tone.now())
 ### Audio initialization rule
 
 Browsers block audio until the user interacts (click/tap). That's why
-`initialize()` is called when the game starts (user clicks "ابدأ اللعبة"),
+`initialize()` is called when the game starts (user clicks a chapter button),
 not when the page loads.
 
 ---

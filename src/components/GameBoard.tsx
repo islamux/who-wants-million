@@ -135,6 +135,7 @@ export function GameBoard({
 
       {state.gameMessage && (
         <div
+          role="alert"
           className={`
             backdrop-blur-xl rounded-xl p-4 mt-4 text-center animate-slide-up border
             ${state.gameMessage.type === 'success'

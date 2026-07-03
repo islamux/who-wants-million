@@ -4,6 +4,7 @@ import { StartScreen } from './components/StartScreen'
 import { GameBoard } from './components/GameBoard'
 import { GameOver } from './components/GameOver'
 import { MoneyTree } from './components/MoneyTree'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { moneyLevels } from './data/questions'
 import './App.css'
 
@@ -38,36 +39,40 @@ export default function App() {
         )}
 
         {state.phase === 'playing' && (
-          <GameBoard
-            state={state}
-            currentQuestion={currentQuestion}
-            soundPlay={play}
-            soundInit={initialize}
-            onSelect={selectAnswer}
-            onConfirm={confirmAnswer}
-            onNext={nextQuestion}
-            on5050={useFiftyFifty}
-            onAudience={useAudience}
-            onWalkAway={walkAway}
-            onTimeout={handleTimeout}
-            onTick={tick}
-          />
+          <ErrorBoundary>
+            <GameBoard
+              state={state}
+              currentQuestion={currentQuestion}
+              soundPlay={play}
+              soundInit={initialize}
+              onSelect={selectAnswer}
+              onConfirm={confirmAnswer}
+              onNext={nextQuestion}
+              on5050={useFiftyFifty}
+              onAudience={useAudience}
+              onWalkAway={walkAway}
+              onTimeout={handleTimeout}
+              onTick={tick}
+            />
+          </ErrorBoundary>
         )}
 
         {state.phase === 'gameover' && (
-          <GameOver
-            gameWon={state.gameWon}
-            walkedAway={state.walkedAway}
-            message={state.gameMessage?.text ?? ''}
-            winnings={
-              state.gameWon
-                ? 'أنت الآن مليونير!'
-                : state.walkedAway
-                  ? `لقد فزت بمبلغ ${moneyLevels[state.currentQuestionIndex]?.amount ?? '0 ريال'}.`
-                  : `لقد عدت إلى المنزل بمبلغ ${safeHavenPrize}.`
-            }
-            onRestart={handleRestart}
-          />
+          <ErrorBoundary>
+            <GameOver
+              gameWon={state.gameWon}
+              walkedAway={state.walkedAway}
+              message={state.gameMessage?.text ?? ''}
+              winnings={
+                state.gameWon
+                  ? 'أنت الآن مليونير!'
+                  : state.walkedAway
+                    ? `لقد فزت بمبلغ ${moneyLevels[state.currentQuestionIndex]?.amount ?? '0 ريال'}.`
+                    : `لقد عدت إلى المنزل بمبلغ ${safeHavenPrize}.`
+              }
+              onRestart={handleRestart}
+            />
+          </ErrorBoundary>
         )}
       </div>
 
