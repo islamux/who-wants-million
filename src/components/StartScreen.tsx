@@ -46,10 +46,10 @@ export function StartScreen({ onStart }: Props) {
               className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl p-4 text-center transition-all duration-300 hover:bg-yellow-400/10 hover:border-yellow-400/50 hover:-translate-y-1 hover:shadow-lg hover:shadow-yellow-400/10 cursor-pointer group"
             >
               <div className="text-yellow-400 font-bold text-sm mb-1 group-hover:text-yellow-300">
-                الباب {chapterNames[ch.id]}
+                {ch.title}
               </div>
               <div className="text-gray-400 text-xs leading-relaxed group-hover:text-gray-300">
-                {ch.title}
+                الباب {chapterNames[ch.id]}
               </div>
             </button>
           ))}
